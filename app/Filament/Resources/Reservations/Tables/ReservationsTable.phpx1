@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Filament\Resources\Reservations\Tables;
+
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn; // Import fondamentale per la tabella
+
+class ReservationsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('apartment.name')
+                    ->label('Appartamento')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('guest_name')
+                    ->label('Ospite')
+                    ->searchable(),
+                TextColumn::make('check_in')
+                    ->label('Arrivo')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+                TextColumn::make('check_out')
+                    ->label('Partenza')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+                TextColumn::make('token')
+                    ->label('Token Segreto')
+                    ->copyable() // Permette alla cliente di copiare il token con un click!
+                    ->color('success'),
+            ])
+            ->filters([
+                //
+            ])
+            ->recordActions([
+                EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}

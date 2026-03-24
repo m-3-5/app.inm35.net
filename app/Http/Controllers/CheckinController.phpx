@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Reservation;
+
+class CheckinController extends Controller
+{
+    public function show($token)
+    {
+        // 1. Cerca la prenotazione usando il token segreto
+        $reservation = Reservation::where('token', $token)
+            ->with('apartment') // Prende anche i dati della casa (Regole, Video, ecc.)
+            ->firstOrFail(); // Se il token non esiste, dà errore 404 in automatico
+
+        // 2. Manda tutti i dati alla pagina grafica (che creeremo tra un attimo)
+        return view('checkin.show', [
+            'reservation' => $reservation,
+            'apartment' => $reservation->apartment,
+        ]);
+    }
+}

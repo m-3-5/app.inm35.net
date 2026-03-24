@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Reservation;
+use App\Models\GuestDocument;
+use Carbon\Carbon;
+
+class CheckinController extends Controller
+{
+    // 1. Mostra la pagina
+    public function show($token)
+    {
+        $reservation = Reservation::where('token', $token)->with('apartment')->firstOrFail();
+
+        // Se è scaduto, mostra "Arrivederci"
+        if (Carbon::now()->isAfter($reservation->check_out)) {
+            return view('checkin.expired', compact('reservation'));
+        }
+
+        // Cerca se ci sono documenti per questa prenotazione
+        $hasDocuments = GuestDocument::where('reservation_id', $reservation->id)->exists();
+
+        // Se NON ci sono documenti, mostra la pagina di Upload
+        if (!$hasDocuments) {
+            return view('checkin.upload', [
+                'reservation' => $reservation,
+                'apartment' => $reservation->apartment,
+            ]);
+        }
+
+        // Se i documenti CI SONO, sblocca tutto e mostra la pagina che hai visto prima!
+        return view('checkin.show', [
+            'reservation' => $reservation,
+            'apartment' => $reservation->apartment,
+        ]);
+    }
+
+   // 2. Salva i file caricati dall'ospite
+    public function storeDocument(Request $request, $token)
+    {
+        $reservation = Reservation::where('token', $token)->firstOrFail();
+
+        // Controlla che sia un "array" di file e che ogni file sia corretto
+        $request->validate([
+            'document_files' => 'required|array',
+            'document_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ]);
+
+        // Ciclo (Loop): Per ogni file caricato, fai il salvataggio
+        foreach ($request->file('document_files') as $file) {
+            // Salva il singolo file sul server
+            $path = $file->store('documents', 'public');
+
+            // Salva il percorso nel database
+            GuestDocument::create([
+                'reservation_id' => $reservation->id,
+                'file_path' => $path,
+            ]);
+        }
+
+        // Riporta l'ospite alla pagina sbloccata con il messaggio di successo al plurale
+        return redirect()->route('checkin.show', $token)
+            ->with('success', 'Documenti ricevuti e verificati con successo! Il check-in è sbloccato.');
+    }
+}

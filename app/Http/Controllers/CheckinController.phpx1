@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Reservation;
+use Carbon\Carbon; // Serve per gestire date e orari
+
+class CheckinController extends Controller
+{
+    public function show($token)
+    {
+        $reservation = Reservation::where('token', $token)
+            ->with('apartment')
+            ->firstOrFail();
+
+        // REGOLA 1: IL LINK È SCADUTO?
+        // Controlla se la data/ora attuale è successiva alla data di check-out
+        if (Carbon::now()->isAfter($reservation->check_out)) {
+            // Se è scaduto, mostra la pagina di "Arrivederci"
+            return view('checkin.expired', [
+                'reservation' => $reservation,
+                'apartment' => $reservation->apartment,
+            ]);
+        }
+
+        // Se non è scaduto, mostra la pagina normale
+        return view('checkin.show', [
+            'reservation' => $reservation,
+            'apartment' => $reservation->apartment,
+        ]);
+    }
+}

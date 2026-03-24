@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Filament\Resources\Reservations\Schemas;
+
+// Importiamo la Struttura
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+
+// Importiamo i Campi Compilabili
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Illuminate\Support\Str; // Serve per generare il token casuale
+
+class ReservationForm
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Dettagli Ospite e Appartamento')
+                    ->schema([
+                        Select::make('apartment_id')
+                            ->label('Appartamento')
+                            ->relationship('apartment', 'name') // Collega ai 7 appartamenti
+                            ->required(),
+                        TextInput::make('guest_name')
+                            ->label('Nome Ospite')
+                            ->required(),
+                        TextInput::make('guest_email')
+                            ->label('Email Ospite (Opzionale)')
+                            ->email(),
+                    ])->columns(3),
+
+                Section::make('Date Soggiorno')
+                    ->description('Queste date determinano la scadenza del link segreto.')
+                    ->schema([
+                        DateTimePicker::make('check_in')
+                            ->label('Data e Ora di Arrivo')
+                            ->required(),
+                        DateTimePicker::make('check_out')
+                            ->label('Data e Ora di Partenza')
+                            ->required(),
+                    ])->columns(2),
+
+                Section::make('Link Segreto')
+                    ->description('Questo token viene generato in automatico.')
+                    ->schema([
+                        TextInput::make('token')
+                            ->label('Token Univoco')
+                            ->default(fn () => Str::random(10)) // Genera 10 caratteri casuali!
+                            ->readOnly() // La cliente non può modificarlo a mano
+                            ->required(),
+                    ]),
+            ]);
+    }
+}
